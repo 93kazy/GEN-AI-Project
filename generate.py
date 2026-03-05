@@ -47,7 +47,7 @@ if __name__ == '__main__':
     eps_min =  0.001
     n_samples = 0
     reinit_every = 200
-    reinit_strenght = 0.2
+    reinit_strength = 0.2
     while n_samples < 10000:
         z = torch.randn(args.batch_size, 100).to(device)
         for i in range(steps):
@@ -78,6 +78,7 @@ if __name__ == '__main__':
                 if n_samples < 10000:
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1
+
 
 
 
