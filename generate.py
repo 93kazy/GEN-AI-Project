@@ -46,17 +46,23 @@ if __name__ == '__main__':
     eps0 = 0.01
     eps_min =  0.001
     n_samples = 0
+    reinit_every = 200
+    reinit_strenght = 0.2
     while n_samples < 10000:
         z = torch.randn(args.batch_size, 100).to(device)
         for i in range(steps):
-            cos =  0.5 * (1 + math.cos(math.pi * i / steps))
-            epsilon = eps0 + (eps_min - eps0) * cos
+            t = i / max(steps - 1, 1)
+            epsilon = eps0 + (eps_min - eps0) * t
+
+            if i > 0 and reinit_every > 0 and (i % reinit_every == 0):
+                z = ((1.0 - reinit_strength) * z + reinit_strength * torch.randn_like(z))
+            
             z.requires_grad_(True)
             x = model_G(z)
             d_out = model_D(x)
             d = torch.logit(d_out, eps=1e-7).squeeze()
             prior_energy = 0.5 * torch.sum(z**2, dim=1)
-            energy = prior_energy - 0.5 * d
+            energy = prior_energy - d
             grad_z = torch.autograd.grad(outputs=energy.sum(), inputs=z)[0]
             noise = torch.randn_like(z)
             noise_scale = 0.1
@@ -71,8 +77,8 @@ if __name__ == '__main__':
             for k in range(x.shape[0]):
                 if n_samples < 10000:
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
-
                     n_samples += 1
+
 
 
 
