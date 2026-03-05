@@ -59,8 +59,9 @@ if __name__ == '__main__':
             energy = prior_energy - d
             grad_z = torch.autograd.grad(outputs=energy.sum(), inputs=z)[0]
             noise = torch.randn_like(z)
+            noise_scale = 0.1
             with torch.no_grad():
-                z = z - (epsilon / 2) * grad_z + math.sqrt(epsilon) * noise
+                z = z - (epsilon / 2 * grad_z) + math.sqrt(epsilon) * noise * noise_scale
                 z = z.detach()
 
         with torch.no_grad():
@@ -72,4 +73,5 @@ if __name__ == '__main__':
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
 
                     n_samples += 1
+
 
