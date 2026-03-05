@@ -43,14 +43,14 @@ if __name__ == '__main__':
     os.makedirs('samples', exist_ok=True)
 
     steps = 1000
-    esp0 = 0.01
+    eps0 = 0.01
     eps_min =  0.001
     n_samples = 0
     while n_samples < 10000:
         z = torch.randn(args.batch_size, 100).to(device)
         for i in range(steps):
             cos =  0.5 * (1 + math.cos(math.pi * i / steps))
-            epsilon = eps0 + (esp_min - eps0) * cos
+            epsilon = eps0 + (eps_min - eps0) * cos
             z.requires_grad_(True)
             x = model_G(z)
             d_out = model_D(x)
@@ -72,3 +72,4 @@ if __name__ == '__main__':
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
 
                     n_samples += 1
+
