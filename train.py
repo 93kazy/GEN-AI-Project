@@ -10,7 +10,7 @@ from utils import D_train, G_train, save_models
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train GAN on MNIST.')
-    parser.add_argument("--epochs", type=int, default=500, help="Number of epochs for training.")
+    parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for training.")
     parser.add_argument("--lr", type=float, default=0.0002, help="Learning rate.")
     parser.add_argument("--batch_size", type=int, default=64, help="Size of mini-batches for SGD.")
     parser.add_argument("--gpus", type=int, default=-1, help="Number of GPUs to use (-1 for all available).")
