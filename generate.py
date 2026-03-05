@@ -42,20 +42,15 @@ if __name__ == '__main__':
     print('Start Generating')
     os.makedirs('samples', exist_ok=True)
 
-    steps = 1000
+    steps = 150
     eps0 = 0.01
     eps_min =  0.001
     n_samples = 0
-    reinit_every = 200
-    reinit_strength = 0.2
     while n_samples < 10000:
         z = torch.randn(args.batch_size, 100).to(device)
         for i in range(steps):
             t = i / max(steps - 1, 1)
             epsilon = eps0 + (eps_min - eps0) * t
-
-            if i > 0 and reinit_every > 0 and (i % reinit_every == 0):
-                z = ((1.0 - reinit_strength) * z + reinit_strength * torch.randn_like(z))
             
             z.requires_grad_(True)
             x = model_G(z)
@@ -65,9 +60,8 @@ if __name__ == '__main__':
             energy = prior_energy - d
             grad_z = torch.autograd.grad(outputs=energy.sum(), inputs=z)[0]
             noise = torch.randn_like(z)
-            noise_scale = 0.1
             with torch.no_grad():
-                z = z - (epsilon / 2) * grad_z + math.sqrt(epsilon) * noise * noise_scale
+                z = z - (epsilon / 2) * grad_z + math.sqrt(epsilon) * noise
                 z = z.detach()
 
         with torch.no_grad():
@@ -78,6 +72,7 @@ if __name__ == '__main__':
                 if n_samples < 10000:
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1
+
 
 
 
