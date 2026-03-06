@@ -104,8 +104,8 @@ if __name__ == '__main__':
             for _ in range(n):
                 D_train(x, G, D, D_optimizer, criterion, device)
             G_train(x, G, D, G_optimizer, criterion, device)
-        G_scheduler.step()
-        D_scheduler.step()
+        """G_scheduler.step()
+        D_scheduler.step()"""
         if epoch % 10 == 0:
             save_models(G, D, 'checkpoints')
 
