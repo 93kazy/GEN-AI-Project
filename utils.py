@@ -5,7 +5,26 @@ import os
 
 def D_train(x, G, D, D_optimizer, criterion, device):
     #=======================Train the discriminator=======================#
+    clip_value = 0.01
     D.zero_grad()
+    x_real = x.to(device)
+    D_real = D(x_real).mean()
+
+    z = torch.randn(x.shape[0], 100, device=device)
+    x_fake = G(z).detach()
+    D_fake = D(x_fake).mean()
+
+    D_loss = D_fake - D_real
+    D_loss.backward()
+    D_optimizer.step()
+
+    for p in D.parameters():
+        p.data.clamp_(-clip_value, clip_value)
+
+    return D_loss.data.item()
+
+    
+    """D.zero_grad()
 
     # train discriminator on real
     x_real = x.to(device)
@@ -30,12 +49,23 @@ def D_train(x, G, D, D_optimizer, criterion, device):
     D_loss.backward()
     D_optimizer.step()
         
-    return  D_loss.data.item()
+    return  D_loss.data.item()"""
 
 
 def G_train(x, G, D, G_optimizer, criterion, device):
     #=======================Train the generator=======================#
+
     G.zero_grad()
+
+    z = torch.randn(x.shape[0], 100, device=device)
+    G_loss = -D(G(z)).mean()
+
+    G_loss.backward()
+    G_optimizer.step()
+
+    return G_loss.data.item()
+    
+    """G.zero_grad()
 
     z = torch.randn(x.shape[0], 100, device=device)
     y = torch.ones(x.shape[0], 1, device=device)
@@ -48,7 +78,7 @@ def G_train(x, G, D, G_optimizer, criterion, device):
     G_loss.backward()
     G_optimizer.step()
         
-    return G_loss.data.item()
+    return G_loss.data.item()"""
 
 
 
@@ -64,4 +94,5 @@ def load_model(G,D, folder, device):
     D_ckpt = torch.load(D_cpkt_path, map_location=device)
     G.load_state_dict({k.replace('module.', ''): v for k, v in G_ckpt.items()})
     D.load_state_dict({k.replace('module.', ''): v for k, v in D_ckpt.items()})
+
     return G,D
