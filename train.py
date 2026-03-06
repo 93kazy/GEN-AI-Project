@@ -82,18 +82,27 @@ if __name__ == '__main__':
 
     # Loss and optimizers
     criterion = nn.BCELoss()
-    G_optimizer = optim.Adam(G.parameters(), lr=args.lr)
-    D_optimizer = optim.Adam(D.parameters(), lr=args.lr)
+    G_optimizer = optim.Adam(G.parameters(), lr=args.lr,betas=(0.5, 0.999))
+    D_optimizer = optim.Adam(D.parameters(), lr=args.lr,betas=(0.5, 0.999))
 
+    G_scheduler = optim.lr_scheduler.StepLR(
+        G_optimizer, step_size=args.epochs // 2, gamma=0.5
+    )
+    D_scheduler = optim.lr_scheduler.StepLR(
+        D_optimizer, step_size=args.epochs // 2, gamma=0.5
+    )
 
     print('Start training:')
     n_epoch = args.epochs
+    n = 2
     for epoch in range(1, n_epoch + 1):
         for batch_idx, (x, _) in enumerate(train_loader):
             x = x.view(-1, mnist_dim).to(device)
-            D_train(x, G, D, D_optimizer, criterion, device)
+            for _ in range(n):
+                D_train(x, G, D, D_optimizer, criterion, device)
             G_train(x, G, D, G_optimizer, criterion, device)
-
+        G_scheduler.step()
+        D_scheduler.step()
         if epoch % 10 == 0:
             save_models(G, D, 'checkpoints')
 
