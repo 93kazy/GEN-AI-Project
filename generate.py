@@ -42,7 +42,7 @@ if __name__ == '__main__':
     print('Start Generating')
     os.makedirs('samples', exist_ok=True)
 
-    steps = 150
+    steps = 200
     epsilon = 0.01
     n_samples = 0
     while n_samples < 10000:
@@ -51,7 +51,7 @@ if __name__ == '__main__':
             z.requires_grad_(True)
             x = model_G(z)
             d_out = model_D(x)
-            d = d_out.squeeze(-1)
+            d = torch.logit(d_out, eps=1e-7).squeeze(-1)
             prior_energy = 0.5 * torch.sum(z**2, dim=1)
             energy = prior_energy - d
             grad_z = torch.autograd.grad(outputs=energy.sum(), inputs=z)[0]
@@ -68,6 +68,7 @@ if __name__ == '__main__':
                 if n_samples < 10000:
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1
+
 
 
 
