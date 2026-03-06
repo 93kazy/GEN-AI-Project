@@ -82,15 +82,18 @@ if __name__ == '__main__':
 
     # Loss and optimizers
     criterion = nn.BCELoss()
-    G_optimizer = optim.Adam(G.parameters(), lr=args.lr,betas=(0.5, 0.999))
-    D_optimizer = optim.Adam(D.parameters(), lr=args.lr,betas=(0.5, 0.999))
+    """G_optimizer = optim.Adam(G.parameters(), lr=args.lr,betas=(0.5, 0.999))
+    D_optimizer = optim.Adam(D.parameters(), lr=args.lr,betas=(0.5, 0.999))"""
 
-    G_scheduler = optim.lr_scheduler.StepLR(
+    G_optimizer = optim.RMSprop(G.parameters(), lr=5e-5)
+    D_optimizer = optim.RMSprop(D.parameters(), lr=5e-5)
+
+    """G_scheduler = optim.lr_scheduler.StepLR(
         G_optimizer, step_size=args.epochs // 2, gamma=0.5
     )
     D_scheduler = optim.lr_scheduler.StepLR(
         D_optimizer, step_size=args.epochs // 2, gamma=0.5
-    )
+    )"""
 
     print('Start training:')
     n_epoch = args.epochs
