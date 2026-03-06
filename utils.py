@@ -5,7 +5,7 @@ import os
 
 def D_train(x, G, D, D_optimizer, criterion, device):
     #=======================Train the discriminator=======================#
-    clip_value = 0.01
+    clip_value = 0.1
     D.zero_grad()
     x_real = x.to(device)
     D_real = D(x_real).mean()
@@ -96,3 +96,4 @@ def load_model(G,D, folder, device):
     D.load_state_dict({k.replace('module.', ''): v for k, v in D_ckpt.items()})
 
     return G,D
+
