@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     print('Start training:')
     n_epoch = args.epochs
-    n = 2
+    n = 5
     for epoch in range(1, n_epoch + 1):
         for batch_idx, (x, _) in enumerate(train_loader):
             x = x.view(-1, mnist_dim).to(device)
