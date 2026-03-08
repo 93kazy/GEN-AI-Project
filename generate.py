@@ -43,7 +43,7 @@ if __name__ == '__main__':
     os.makedirs('samples', exist_ok=True)
 
     steps = 500
-    epsilon = 0.001
+    epsilon_start = 0.001
     decay = 0.1
     n_samples = 0
     while n_samples < 10000:
@@ -73,6 +73,7 @@ if __name__ == '__main__':
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'), normalize=True, value_range=(-1, 1))
                     #torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1
+
 
 
 
