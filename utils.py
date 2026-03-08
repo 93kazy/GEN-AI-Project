@@ -5,23 +5,41 @@ import os
 
 def D_train(x, G, D, D_optimizer, criterion, device):
     #=======================Train the discriminator=======================#
-    clip_value = 0.1
     D.zero_grad()
+    M = x.shape[0]
+    z = torch.randn(M, 100, device=device)
+
+    for i in range(steps):
+        z.requires_grad_(True)
+        
+        G_z = G(z)
+        D_G_z = D(G_z).squeeze() 
+ 
+        prior_energy = 0.5 * torch.sum(z**2, dim=1)
+        energy = prior_energy - D_G_z
+        
+        grad_z = torch.autograd.grad(outputs=energy.sum(), inputs=z)[0]
+        noise = torch.randn_like(z)
+        
+        with torch.no_grad():
+            z = z - (epsilon / 2) * grad_z + math.sqrt(epsilon) * noise
+            z = z.detach()
+            
     x_real = x.to(device)
+    x_fake_mcmc = G(z).detach()
+    
     D_real = D(x_real).mean()
-
-    z = torch.randn(x.shape[0], 100, device=device)
-    x_fake = G(z).detach()
-    D_fake = D(x_fake).mean()
-
+    D_fake = D(x_fake_mcmc).mean()
+    
     D_loss = D_fake - D_real
+    
     D_loss.backward()
     D_optimizer.step()
-
+    
     for p in D.parameters():
-        p.data.clamp_(-clip_value, clip_value)
-
-    return D_loss.data.item()
+        p.data.clamp_(-0.01, 0.01)
+        
+    return D_loss.item()
 
     
     """D.zero_grad()
@@ -56,14 +74,15 @@ def G_train(x, G, D, G_optimizer, criterion, device):
     #=======================Train the generator=======================#
 
     G.zero_grad()
-
-    z = torch.randn(x.shape[0], 100, device=device)
-    G_loss = -D(G(z)).mean()
-
+    M = x.shape[0]
+    z = torch.randn(M, 100, device=device)
+    x_fake = G(z)
+    D_fake = D(x_fake).mean()
+    G_loss = -D_fake
     G_loss.backward()
     G_optimizer.step()
-
-    return G_loss.data.item()
+        
+    return G_loss.item()
     
     """G.zero_grad()
 
@@ -96,4 +115,5 @@ def load_model(G,D, folder, device):
     D.load_state_dict({k.replace('module.', ''): v for k, v in D_ckpt.items()})
 
     return G,D
+
 
