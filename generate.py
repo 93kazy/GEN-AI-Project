@@ -62,7 +62,8 @@ if __name__ == '__main__':
             x = x_base + noise_factor * z_prime
             #x = model_G(z)
             d_out = model_D(x)
-            d = torch.logit(d_out, eps=1e-7).squeeze(-1)
+            d = d_out.squeeze(-1)
+            #d = torch.logit(d_out, eps=1e-7).squeeze(-1)
             prior_energy = 0.5 * torch.sum(z**2, dim=1)
             prior_z_prime = 0.5 * torch.sum(z_prime**2, dim=1)
             energy = prior_energy + prior_z_prime - d
@@ -88,6 +89,7 @@ if __name__ == '__main__':
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'), normalize=True, value_range=(-1, 1))
                     #torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1
+
 
 
 
