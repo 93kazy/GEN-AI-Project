@@ -43,7 +43,7 @@ if __name__ == '__main__':
     os.makedirs('samples', exist_ok=True)
 
     steps = 200
-    epsilon = 0.01
+    epsilon = 0.001
     n_samples = 0
     while n_samples < 10000:
         z = torch.randn(args.batch_size, 100).to(device)
@@ -66,8 +66,10 @@ if __name__ == '__main__':
             
             for k in range(x.shape[0]):
                 if n_samples < 10000:
-                    torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
+                    torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'), normalize=True, value_range=(-1, 1))
+                    #torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1
+
 
 
 
