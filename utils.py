@@ -1,4 +1,5 @@
 import torch
+import torch.autograd as autograd
 import os
 import math
 
@@ -7,42 +8,22 @@ import math
 def D_train(x, G, D, D_optimizer, criterion, device):
     #=======================Train the discriminator=======================#
     D.zero_grad()
-    M = x.shape[0]
-    z = torch.randn(M, 100, device=device)
 
-    steps = 10
-    epsilon = 0.01
-    for i in range(steps):
-        z.requires_grad_(True)
-        
-        G_z = G(z)
-        D_G_z = D(G_z).squeeze() 
- 
-        prior_energy = 0.5 * torch.sum(z**2, dim=1)
-        energy = prior_energy - D_G_z
-        
-        grad_z = torch.autograd.grad(outputs=energy.sum(), inputs=z)[0]
-        noise = torch.randn_like(z)
-        
-        with torch.no_grad():
-            z = z - (epsilon / 2) * grad_z + math.sqrt(epsilon) * noise
-            z = z.detach()
-            
-    x_real = x.to(device)
-    x_fake_mcmc = G(z).detach()
-    
-    D_real = D(x_real).mean()
-    D_fake = D(x_fake_mcmc).mean()
-    
-    D_loss = D_fake - D_real
-    
-    D_loss.backward()
+    real_samples = x.to(device)
+    real_validity = D(real_samples)
+
+    z = torch.randn(real_samples.size(0), 100, device=device)
+    fake_samples = G(z).detach() # Detach pour ne pas calculer les gradients de G
+    fake_validity = D(fake_samples)
+
+    gradient_penalty = compute_gradient_penalty(D, real_samples, fake_samples, device)
+
+    d_loss = fake_validity.mean() - real_validity.mean() + lambda_gp * gradient_penalty
+
+    d_loss.backward()
     D_optimizer.step()
-    
-    for p in D.parameters():
-        p.data.clamp_(-0.01, 0.01)
-        
-    return D_loss.item()
+
+    return d_loss.item()
 
     
     """D.zero_grad()
@@ -77,15 +58,18 @@ def G_train(x, G, D, G_optimizer, criterion, device):
     #=======================Train the generator=======================#
 
     G.zero_grad()
-    M = x.shape[0]
-    z = torch.randn(M, 100, device=device)
-    x_fake = G(z)
-    D_fake = D(x_fake).mean()
-    G_loss = -D_fake
-    G_loss.backward()
+
+    z = torch.randn(x.size(0), 100, device=device)
+    fake_samples = G(z)
+
+    fake_validity = D(fake_samples)
+
+    g_loss = -fake_validity.mean()
+
+    g_loss.backward()
     G_optimizer.step()
-        
-    return G_loss.item()
+
+    return g_loss.item()
     
     """G.zero_grad()
 
@@ -121,5 +105,25 @@ def load_model(G,D, folder, device):
 
 
 
+def compute_gradient_penalty(D, real_samples, fake_samples, device):
+    alpha = torch.rand(real_samples.size(0), 1).expand_as(real_samples).to(device)
+    interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
+    
+    d_interpolates = D(interpolates)
+    
+    fake = torch.ones(real_samples.size(0), 1).to(device)
+
+    gradients = autograd.grad(
+        outputs=d_interpolates,
+        inputs=interpolates,
+        grad_outputs=fake,
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True,
+    )[0]
+    
+    gradients = gradients.view(gradients.size(0), -1)
+    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    return gradient_penalty
 
 
