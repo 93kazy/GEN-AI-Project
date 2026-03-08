@@ -7,8 +7,9 @@ import math
 
 def D_train(x, G, D, D_optimizer, criterion, device):
     #=======================Train the discriminator=======================#
+    lambda_gp = 10
     D.zero_grad()
-
+    
     real_samples = x.to(device)
     real_validity = D(real_samples)
 
@@ -125,5 +126,6 @@ def compute_gradient_penalty(D, real_samples, fake_samples, device):
     gradients = gradients.view(gradients.size(0), -1)
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
+
 
 
