@@ -46,26 +46,41 @@ if __name__ == '__main__':
     epsilon_start = 0.001
     decay = 0.1
     n_samples = 0
+    noise_factor = 0.1
     while n_samples < 10000:
         z = torch.randn(args.batch_size, 100).to(device)
+        z_prime = torch.randn(args.batch_size, 784).to(device)
+        
         epsilon = epsilon_start
         for i in range(steps):
             if i > 0 and i % 200 == 0:
                 epsilon *= decay
             z.requires_grad_(True)
-            x = model_G(z)
+            z_prime.requires_grad_(True)
+
+            x_base = model_G(z)
+            x = x_base + noise_factor * z_prime
+            #x = model_G(z)
             d_out = model_D(x)
             d = torch.logit(d_out, eps=1e-7).squeeze(-1)
             prior_energy = 0.5 * torch.sum(z**2, dim=1)
-            energy = prior_energy - d
-            grad_z = torch.autograd.grad(outputs=energy.sum(), inputs=z)[0]
-            noise = torch.randn_like(z)
+            prior_z_prime = 0.5 * torch.sum(z_prime**2, dim=1)
+            energy = prior_energy + prior_z_prime - d
+            #grad_z = torch.autograd.grad(outputs=energy.sum(), inputs=z)[0]
+            grad_z, grad_z_prime = torch.autograd.grad(outputs=energy.sum(), inputs=(z, z_prime))
+            
             with torch.no_grad():
+                noise = torch.randn_like(z)
+                noise_z_prime = torch.randn_like(z_prime)
+                
                 z = z - (epsilon / 2) * grad_z + math.sqrt(epsilon) * noise
+                z_prime = z_prime - (epsilon / 2) * grad_z_prime + math.sqrt(epsilon) * noise_z_prime
+                
                 z = z.detach()
+                z_prime = z_prime.detach()
 
         with torch.no_grad():
-            x = model_G(z)
+            x = model_G(z) + noise_factor * z_prime
             x = x.reshape(args.batch_size, 1, 28, 28)
             
             for k in range(x.shape[0]):
@@ -73,6 +88,7 @@ if __name__ == '__main__':
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'), normalize=True, value_range=(-1, 1))
                     #torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1
+
 
 
 
