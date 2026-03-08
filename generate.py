@@ -42,7 +42,7 @@ if __name__ == '__main__':
     print('Start Generating')
     os.makedirs('samples', exist_ok=True)
 
-    steps = 500
+    steps = 700
     epsilon_start = 0.001
     decay = 0.1
     n_samples = 0
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                 z_prime = z_prime.detach()
 
         with torch.no_grad():
-            x = model_G(z) + noise_factor * z_prime
+            x = model_G(z)
             x = x.reshape(args.batch_size, 1, 28, 28)
             
             for k in range(x.shape[0]):
@@ -89,6 +89,7 @@ if __name__ == '__main__':
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'), normalize=True, value_range=(-1, 1))
                     #torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1
+
 
 
 
