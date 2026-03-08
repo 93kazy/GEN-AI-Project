@@ -102,8 +102,8 @@ if __name__ == '__main__':
         for batch_idx, (x, _) in enumerate(train_loader):
             x = x.view(-1, mnist_dim).to(device)
             for _ in range(n):
-                D_train(x, G, D, D_optimizer, criterion, device)
-            G_train(x, G, D, G_optimizer, criterion, device)
+                D_train(x, G, D, D_optimizer, device)
+            G_train(x, G, D, G_optimizer, device)
         """G_scheduler.step()
         D_scheduler.step()"""
         if epoch % 10 == 0:
