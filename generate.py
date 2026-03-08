@@ -42,8 +42,8 @@ if __name__ == '__main__':
     print('Start Generating')
     os.makedirs('samples', exist_ok=True)
 
-    steps = 700
-    epsilon_start = 0.001
+    steps = 1000
+    epsilon_start = 0.01
     decay = 0.1
     n_samples = 0
     noise_factor = 0.01
@@ -89,6 +89,7 @@ if __name__ == '__main__':
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'), normalize=True, value_range=(-1, 1))
                     #torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1
+
 
 
 
