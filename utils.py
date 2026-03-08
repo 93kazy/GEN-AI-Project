@@ -10,6 +10,7 @@ def D_train(x, G, D, D_optimizer, criterion, device):
     z = torch.randn(M, 100, device=device)
 
     steps = 10
+    epsilon = 0.01
     for i in range(steps):
         z.requires_grad_(True)
         
@@ -116,6 +117,7 @@ def load_model(G,D, folder, device):
     D.load_state_dict({k.replace('module.', ''): v for k, v in D_ckpt.items()})
 
     return G,D
+
 
 
 
