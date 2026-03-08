@@ -81,7 +81,7 @@ if __name__ == '__main__':
     print('Model loaded.')
 
     # Loss and optimizers
-    criterion = nn.BCELoss()
+    #criterion = nn.BCELoss()
     """G_optimizer = optim.Adam(G.parameters(), lr=args.lr,betas=(0.5, 0.999))
     D_optimizer = optim.Adam(D.parameters(), lr=args.lr,betas=(0.5, 0.999))"""
 
