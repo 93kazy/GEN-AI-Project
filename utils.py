@@ -14,7 +14,7 @@ def D_train(x, G, D, D_optimizer, criterion, device):
     real_validity = D(real_samples)
 
     z = torch.randn(real_samples.size(0), 100, device=device)
-    fake_samples = G(z).detach() # Detach pour ne pas calculer les gradients de G
+    fake_samples = G(z).detach()
     fake_validity = D(fake_samples)
 
     gradient_penalty = compute_gradient_penalty(D, real_samples, fake_samples, device)
@@ -126,6 +126,7 @@ def compute_gradient_penalty(D, real_samples, fake_samples, device):
     gradients = gradients.view(gradients.size(0), -1)
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
+
 
 
 
