@@ -1,5 +1,6 @@
 import torch
 import os
+import math
 
 
 
@@ -117,6 +118,7 @@ def load_model(G,D, folder, device):
     D.load_state_dict({k.replace('module.', ''): v for k, v in D_ckpt.items()})
 
     return G,D
+
 
 
 
