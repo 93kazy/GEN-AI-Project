@@ -9,7 +9,7 @@ from utils import load_model
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate with Discriminator Driven Latent Sampling.')
-    parser.add_argument("--batch_size", type=int, default=2048,
+    parser.add_argument("--batch_size", type=int, default=256,
                       help="The batch size to use for training.")
     args = parser.parse_args()
 
@@ -42,7 +42,45 @@ if __name__ == '__main__':
     print('Start Generating')
     os.makedirs('samples', exist_ok=True)
 
-    steps = 1000
+    steps = 500
+    epsilon = 0.1
+    n_samples = 0
+    noise_factor = 0.1
+    while n_samples < 10000:
+        z = torch.randn(args.batch_size, 100).to(device)
+
+        for i in range(steps):
+            z.requires_grad_(True)
+            if z.grad is not None:
+              z.grad.detach_()
+              z.grad.zero_()
+
+            x = model_G(z)
+            d_out = model_D.logit(x)
+            #d = d_out.squeeze(-1)
+
+            prior_energy = 0.5 * torch.sum(z**2, dim=1)
+
+            energy = prior_energy - d_out.squeeze(-1)
+            grad_z = torch.autograd.grad(outputs=energy.sum(), inputs=z)[0]
+
+            with torch.no_grad():
+                noise = torch.randn_like(z) * noise_factor
+
+                z = z - (epsilon / 2) * grad_z + math.sqrt(epsilon) * noise
+
+                z = z.detach()
+
+        with torch.no_grad():
+            x = model_G(z)
+            x = x.reshape(args.batch_size, 1, 28, 28)
+
+            for k in range(x.shape[0]):
+                if n_samples < 10000:
+                    torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))
+                    n_samples += 1
+
+    """steps = 1000
     epsilon_start = 0.01
     decay = 0.1
     n_samples = 0
@@ -88,7 +126,8 @@ if __name__ == '__main__':
                 if n_samples < 10000:
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'), normalize=True, value_range=(-1, 1))
                     #torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
-                    n_samples += 1
+                    n_samples += 1"""
+
 
 
 
