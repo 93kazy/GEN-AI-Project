@@ -56,7 +56,7 @@ if __name__ == '__main__':
               z.grad.zero_()
 
             x = model_G(z)
-            d_out = model_D.logit(x)
+            d_out = model_D.module.logit(x)
             #d = d_out.squeeze(-1)
 
             prior_energy = 0.5 * torch.sum(z**2, dim=1)
@@ -127,6 +127,7 @@ if __name__ == '__main__':
                     torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'), normalize=True, value_range=(-1, 1))
                     #torchvision.utils.save_image(x[k], os.path.join('samples', f'{n_samples}.png'))         
                     n_samples += 1"""
+
 
 
 
