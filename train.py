@@ -8,10 +8,11 @@ import torch.optim as optim
 from model import Generator, Discriminator
 from utils import D_train, G_train, save_models
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train GAN on MNIST.')
-    parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for training.")
-    parser.add_argument("--lr", type=float, default=0.0002, help="Learning rate.")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of epochs for training.")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
     parser.add_argument("--batch_size", type=int, default=64, help="Size of mini-batches for SGD.")
     parser.add_argument("--gpus", type=int, default=-1, help="Number of GPUs to use (-1 for all available).")
     args = parser.parse_args()
@@ -33,9 +34,6 @@ if __name__ == '__main__':
         device = torch.device("cpu")
         device_type = "cpu"
         print(f"Using device: CPU")
-        
-
-    
 
     # Create directories
     os.makedirs('checkpoints', exist_ok=True)
@@ -81,32 +79,31 @@ if __name__ == '__main__':
     print('Model loaded.')
 
     # Loss and optimizers
-    #criterion = nn.BCELoss()
-    G_optimizer = optim.Adam(G.parameters(), lr=args.lr,betas=(0.0, 0.9))
-    D_optimizer = optim.Adam(D.parameters(), lr=args.lr,betas=(0.0, 0.9))
+    G_optimizer = optim.Adam(G.parameters(), lr=args.lr, betas=(0.0, 0.9))
+    D_optimizer = optim.Adam(D.parameters(), lr=args.lr, betas=(0.0, 0.9))
 
-    """G_optimizer = optim.RMSprop(G.parameters(), lr=5e-5)
-    D_optimizer = optim.RMSprop(D.parameters(), lr=5e-5)
-
-    G_scheduler = optim.lr_scheduler.StepLR(
-        G_optimizer, step_size=args.epochs // 2, gamma=0.5
-    )
-    D_scheduler = optim.lr_scheduler.StepLR(
-        D_optimizer, step_size=args.epochs // 2, gamma=0.5
-    )"""
+    G_scheduler = optim.lr_scheduler.StepLR(G_optimizer, step_size=20, gamma=0.5)
+    D_scheduler = optim.lr_scheduler.StepLR(D_optimizer, step_size=20, gamma=0.5)
 
     print('Start training:')
     n_epoch = args.epochs
-    n = 5
+    n = 3
     for epoch in range(1, n_epoch + 1):
+        d_losses, g_losses = [], []
         for batch_idx, (x, _) in enumerate(train_loader):
             x = x.view(-1, mnist_dim).to(device)
-            for _ in range(n):
-                D_train(x, G, D, D_optimizer, None,device)
-            G_train(x, G, D, G_optimizer, None,device)
-        """G_scheduler.step()
-        D_scheduler.step()"""
+            b_size = x.size(0)
+            for _ in range(n) :
+                loss_D = D_train(x, G, D, D_optimizer, device)
+                d_losses.append(loss_D)
+                """with torch.no_grad():
+                    for p in D.parameters():
+                        p.data.clamp_(-0.01, 0.01)"""
+            loss_G = G_train(x, G, D, G_optimizer, device)
+            g_losses.append(loss_G)
+        print(f'Epoch [{epoch}/{n_epoch}] | D loss: {sum(d_losses)/len(d_losses):.4f} | G loss: {sum(g_losses)/len(g_losses):.4f}')
+        G_scheduler.step()
+        D_scheduler.step()
         if epoch % 10 == 0:
             save_models(G, D, 'checkpoints')
-
     print('Training done.')
