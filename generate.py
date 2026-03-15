@@ -59,7 +59,7 @@ if __name__ == '__main__':
               z.grad.zero_()
 
             x = model_G(z)
-            d_out = model_D(x)
+            d_out = torch.sigmoid(model_D(x))
             d = d_out.squeeze(-1)
 
             prior_energy = 0.5 * torch.sum(z**2, dim=1)
