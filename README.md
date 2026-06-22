@@ -1,4 +1,4 @@
-# Generative Modeling of Handwritten Digits with a WGAN-GP
+# GAN Sampling Strategies on MNIST: Truncation vs. Discriminator-Driven Latent Sampling
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
@@ -7,25 +7,30 @@
 
 > Academic project carried out as part of my *Generative AI* course
 
-A from-scratch implementation of a **Wasserstein GAN with Gradient Penalty (WGAN-GP)** trained to generate MNIST-like handwritten digits, paired with an advanced **Discriminator-Driven Latent Sampling (DDLS)** procedure at inference time.
+A reproduction and comparative study of two papers — **Wasserstein GAN** (Arjovsky et al., 2017) and **"Your GAN is Secretly an Energy-Based Model and You Should Use Discriminator-Driven Latent Sampling"** (Che et al., 2020) — evaluating how different latent-sampling strategies affect the quality and diversity of generated MNIST digits.
 
 ---
 
 ## Overview
 
-This project tackles image generation on MNIST in two complementary stages:
+A GAN's generator is normally fed latent vectors drawn straight from a Gaussian prior. This baseline is simple but mixes high-quality samples with poor ones coming from the low-density tails of the latent space. Several strategies try to improve sample quality by reshaping *where* in latent space we sample from.
 
-1. **Adversarial training (WGAN-GP).** A generator and a critic are trained against each other using the Wasserstein distance with a gradient-penalty regularizer, which yields more stable training and avoids the weight-clipping pathologies of the original WGAN.
+This project trains a single **WGAN-GP** backbone on MNIST and then compares **four generation strategies** that all reuse the same trained generator (and, for DDLS, the trained critic):
 
-2. **Discriminator-Driven Latent Sampling (DDLS) at generation time.** Rather than sampling latent vectors directly from the prior, the trained critic is reused as an energy model: latent codes are refined with **Langevin dynamics** so that the final samples land in higher-density regions, improving sample quality without retraining.
+1. **Classic GAN sampling** — the baseline: latent codes are drawn directly from the prior `z ~ N(0, I)` and decoded by the generator. Maximum diversity, but the tails produce visibly worse digits.
+2. **Hard truncation** — the truncation trick (Brock et al., 2019) in its strict form: latent values beyond a fixed threshold are rejected/clamped, discarding the low-density tails. Improves fidelity at the cost of diversity, with a sharp cutoff.
+3. **Soft truncation** — a smooth variant: instead of an abrupt cutoff, latent codes are continuously shrunk toward the mode, concentrating probability mass in higher-density regions without the discontinuity of hard truncation.
+4. **Discriminator-Driven Latent Sampling (DDLS)** — the principled approach: the trained critic is reinterpreted as an energy model over latent space, and samples are refined with **Langevin dynamics** so they follow the implied higher-density distribution.
 
-Both the generator and the critic are multilayer perceptrons (MLPs) — the goal is to study the GAN/WGAN training dynamics and energy-based sampling on a compact, fully-connected architecture rather than to rely on convolutional inductive biases.
+The goal is to study the **fidelity/diversity trade-off** across these strategies on a common backbone — see `report.pdf` for the full analysis.
 
 ---
 
 ## Method
 
-### Architecture
+### Backbone architecture
+
+Both the generator and the critic are multilayer perceptrons (MLPs) — the focus is on training dynamics and sampling strategies rather than convolutional inductive biases.
 
 | Component | Layout | Activations | Output |
 |-----------|--------|-------------|--------|
@@ -45,9 +50,9 @@ The latent dimension is **100**; images are MNIST digits (`28 × 28 = 784`) flat
 - **Generator gradient clipping:** max norm 1.0.
 - **Checkpointing:** generator and critic weights saved every 10 epochs to `checkpoints/`.
 
-### Generation (Discriminator-Driven Latent Sampling)
+### Discriminator-Driven Latent Sampling
 
-At inference, samples are produced by Langevin dynamics in latent space (Che et al., 2020). Starting from `z ~ N(0, I)`, the code minimizes an energy `E(z) = ½‖z‖² − σ(D(G(z)))` over **1000 steps**, with a cosine-annealed step size (from `5e-3` down to `1e-6`) and injected Gaussian noise. The refined codes are then decoded by the generator. The script writes **10,000** individual PNG images to `samples/`.
+Among the strategies above, DDLS is the most involved. Starting from `z ~ N(0, I)`, the sampler minimizes an energy `E(z) = ½‖z‖² − σ(D(G(z)))` over **1000 Langevin steps**, with a cosine-annealed step size (from `5e-3` down to `1e-6`) and injected Gaussian noise. The refined latent codes are then decoded by the generator. This treats the trained critic as a learned correction to the prior, steering samples toward regions the critic considers realistic.
 
 ---
 
@@ -58,12 +63,11 @@ GEN-AI-Project/
 ├── model.py            # Generator and Critic (MLP) definitions
 ├── train.py            # WGAN-GP adversarial training loop
 ├── utils.py            # Train steps, gradient penalty, save/load helpers
-├── generate.py         # DDLS / Langevin sampling → 10,000 PNGs
+├── generate.py         # Latent sampling → 10,000 PNGs (DDLS implementation)
 ├── requirements.txt    # Python dependencies
 ├── scripts/            # Slurm submission scripts (train.sh, generate.sh)
 ├── checkpoints/        # Saved weights (G.pth, D.pth)
-├── report.pdf          # Project report
-└── slides.pdf          # Presentation slides
+├── report.pdf          # Project report (full comparison and results)
 ```
 
 ---
@@ -123,7 +127,9 @@ python generate.py --batch_size 2048
 |----------|---------|-------------|
 | `--batch_size` | 2048 | Batch size used during latent sampling |
 
-This loads the latest checkpoints from `checkpoints/`, runs the DDLS sampling procedure, and saves 10,000 generated digits as individual PNG files in `samples/`.
+This loads the latest checkpoints from `checkpoints/` and generates 10,000 digits as individual PNG files in `samples/`. As committed, `generate.py` runs the **DDLS** sampler.
+
+<!-- TODO: document how the other strategies (classic / hard truncation / soft truncation) are selected — separate scripts, a CLI flag, or report-only experiments? -->
 
 ---
 
@@ -145,8 +151,7 @@ You can adjust the learning rate, number of epochs, batch size, and dataset path
 
 ## Results
 
-<!-- TODO: add FID / qualitative results, sample grid image, and any figures from report.pdf -->
-See `report.pdf` and `slides.pdf` for the full experimental analysis and qualitative results.
+See `report.pdf` for the full comparison of the four sampling strategies, including quantitative metrics and qualitative sample grids.
 
 ---
 
@@ -155,15 +160,5 @@ See `report.pdf` and `slides.pdf` for the full experimental analysis and qualita
 - Goodfellow et al. (2014), *Generative Adversarial Networks.*
 - Arjovsky, Chintala & Bottou (2017), *Wasserstein GAN.*
 - Gulrajani et al. (2017), *Improved Training of Wasserstein GANs.*
+- Brock, Donahue & Simonyan (2019), *Large Scale GAN Training for High Fidelity Natural Image Synthesis* (truncation trick).
 - Che et al. (2020), *Your GAN is Secretly an Energy-Based Model and You Should Use Discriminator-Driven Latent Sampling.*
-
----
-
-## Author
-
-<!-- TODO: fill in author name(s) and contact -->
-Developed by [93kazy](https://github.com/93kazy).
-
-## License
-
-Released under the MIT License. <!-- TODO: confirm license, add a LICENSE file if needed -->
