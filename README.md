@@ -5,7 +5,7 @@
 ![Dataset](https://img.shields.io/badge/Dataset-MNIST-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-> Academic project carried out as part of the *Generative AI* course of the Master IASD (Artificial Intelligence, Systems, Data), Université Paris Dauphine – PSL (2025–2026). <!-- TODO: confirm course name / year / authors -->
+> Academic project carried out as part of my *Generative AI* course
 
 A from-scratch implementation of a **Wasserstein GAN with Gradient Penalty (WGAN-GP)** trained to generate MNIST-like handwritten digits, paired with an advanced **Discriminator-Driven Latent Sampling (DDLS)** procedure at inference time.
 
